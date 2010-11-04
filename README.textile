@@ -1,0 +1,11 @@
+h3. Turing Test
+
+This project is part of a tutorial series on DailyJS.
+
+Goals:
+
+* CommonJS-based tests that run in the browser, Node, Narwhal, and more
+* Rely the environment's assert module if one exists, else provide our own
+* A test runner with clean output
+
+
