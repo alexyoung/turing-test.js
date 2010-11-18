@@ -52,6 +52,36 @@ exports['test notDeepEqual'] = function() {
   );
 };
 
+exports['test throws'] = function() {
+  assert.throws(function() {
+    throw 'This is an exception';
+  });
+
+  function CustomException() {
+    this.message = 'Custom excpetion';
+    this.name = 'CustomException';
+  }
+
+  assert.throws(function() {
+    throw new CustomException();
+  }, CustomException);
+
+  assert.throws(function() {
+    throw new CustomException();
+  }, CustomException, 'This is an error');
+};
+
+exports['test doesNotThrow'] = function() {
+  assert.doesNotThrow(function() {
+    return true;
+  }, 'this is a message');
+
+  assert.throws(function() {
+    throw 'This is an exception';
+  }, 'this is a message');
+};
+
+
 if (typeof module !== 'undefined')
   if (module === require.main) 
     require('test').run(exports);
