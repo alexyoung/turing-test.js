@@ -1,1 +1,7 @@
+body { font-family: helvetica, arial, sans-serif }
 #results { list-style-type: none }
+#results li { margin: 0.5em 0 }
+.pass { color: green }
+.fail, .error { color: red }
+.header { padding: 1em 0; font-weight: bold }
+.trace { font-family: courier; font-size: 90%; white-space: pre; padding: 1em 0 }
