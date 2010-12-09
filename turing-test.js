@@ -1,5 +1,5 @@
 (function() {
-  var env, node;
+  var env, node, tt;
 
   if (typeof require !== 'undefined') {
     require.paths.unshift('./');
@@ -33,23 +33,38 @@
     return env;
   }
 
-  TuringTest = {
+  tt = TuringTest = {
     isLoading: false,
     loadingItems: 0,
 
     webRelativePath: '',
+    browserPaths: [],
 
     loading: function() {
-      TuringTest.loadingItems++;
-      TuringTest.isLoading = true;
+      tt.loadingItems++;
+      tt.isLoading = true;
     },
 
-    doneLoading: function() {
-      TuringTest.loadingItems--;
-      if (TuringTest.loadingItems === 0) TuringTest.isLoading = false;
+    doneLoading: function(request) {
+      tt.loadingItems--;
+      if (tt.loadingItems === 0) tt.isLoading = false;
     },
 
     load: function(script, eval) {
+      if (!window.__turingTestInit) {
+        window.__turingTestInit = true;
+        TuringTest.init();
+      }
+
+      if (!script.match(/\.js$/)) {
+        script = script + '.js';
+      }
+
+      if (!script.match(/\//)) {
+        script = tt.browserPaths[0] + '/' + script;
+        script = script.replace(/\.\//, '');
+      }
+
       function addEvent(obj, type, fn)  {
         if (obj.attachEvent) {
           obj['e' + type + fn] = fn;
@@ -75,7 +90,7 @@
           var scriptTag = document.createElement('script'),
               head = document.getElementsByTagName('head');
           this.loading();
-          addEvent(scriptTag, 'load', TuringTest.doneLoading);
+          addEvent(scriptTag, 'load', tt.doneLoading);
           scriptTag.setAttribute('type', 'text/javascript');
           scriptTag.setAttribute('src', script);
           head[0].insertBefore(scriptTag, head.firstChild);
@@ -83,45 +98,36 @@
       }
     },
 
-    addStyleSheet: function() {
-      var link = document.createElement('link'),
-          head = document.getElementsByTagName('head');
-      link.setAttribute('rel', 'stylesheet');
-      link.setAttribute('href', this.webRelativePath + 'stylesheets/screen.css');
-      head[0].insertBefore(link, head.firstChild);
+    fakeTest: {
+      run: function(tests) {
+        if (tt.isLoading) {
+          setTimeout(function() { tt.fakeTest.run(tests); }, 10);
+        } else {
+          return tt.testRunner.run(tests);
+        }
+      }
     },
 
     installBrowserPatching: function() {
       window.exports = [];
+      window.__dirname = '';
 
-      window.require = function() {
-        return {
-          run: function() {
-            exports.run(exports);
-          }
-        };
+      window.require = function(path) {
+        exports = {};
+        tt.load(path);
+
+        if (path === 'test') {
+          return tt.fakeTest;
+        } else {
+          return {};
+        }
       };
 
       window.require.paths = {
-        unshift: function() {}
-      };
-    },
-
-    installBrowserSupport: function() {
-      TuringTest.load(TuringTest.webRelativePath + 'lib/test.js');
-      TuringTest.load(TuringTest.webRelativePath + 'lib/assert.js');
-      TuringTest.installBrowserPatching();
-      TuringTest.addStyleSheet();
-      TuringTest.test = {
-        run: function(tests) {
-          if (TuringTest.isLoading) {
-            setTimeout(function() { TuringTest.test.run(tests); }, 10);
-          } else {
-            return TuringTest.testRunner.run(tests);
-          }
+        unshift: function(path) {
+          tt.browserPaths.push(path);
         }
       };
-      TuringTest.assert = window.assert;
     },
 
     init: function(options) {
@@ -129,20 +135,19 @@
 
       switch (detectEnvironment()) {
         case 'node':
-          exports.load = TuringTest.load;
+          exports.load = tt.load;
           exports.test = require(__dirname + '/lib/test');
           exports.assert = require(__dirname + '/lib/assert').assert;
         break;
 
         case 'browser':
           this.webRelativePath = options.webRelativePath || '';
-          this.installBrowserSupport();
         break;
       }
 
       if (options.webScripts && options.eval) {
         for (var i = 0; i < options.webScripts.length; i++) {
-          TuringTest.load(options.webScripts[i], options.eval);
+          tt.load(options.webScripts[i], options.eval);
         }
       }
     }
@@ -150,7 +155,11 @@
 
   switch (detectEnvironment()) {
     case 'node':
-      exports.init = TuringTest.init;
+      exports.init = tt.init;
+    break;
+    
+    case 'browser':
+      tt.installBrowserPatching();
     break;
   }
 })();

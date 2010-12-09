@@ -1,12 +1,8 @@
-if (typeof TuringTest === 'undefined') {
-  require.paths.unshift('./');
-  TuringTest = require('turing-test');
-}
+require.paths.unshift('./lib');
 
-TuringTest.init();
+var test = require('test'),
+    assert = require('assert');
 
-var test = TuringTest.test,
-    assert = TuringTest.assert;
 
 exports['test equal'] = function() {
   assert.equal(true, true, 'True should be true');
