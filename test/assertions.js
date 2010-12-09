@@ -1,8 +1,12 @@
-if (typeof require !== 'undefined') {
-  if (typeof require.paths !== 'undefined')
-    require.paths.unshift('lib/');
-  var assert = require('assert');
+if (typeof TuringTest === 'undefined') {
+  require.paths.unshift('./');
+  TuringTest = require('turing-test');
 }
+
+TuringTest.init();
+
+var test = TuringTest.test,
+    assert = TuringTest.assert;
 
 exports['test equal'] = function() {
   assert.equal(true, true, 'True should be true');
@@ -81,8 +85,4 @@ exports['test doesNotThrow'] = function() {
   }, 'this is a message');
 };
 
-
-if (typeof module !== 'undefined')
-  if (module === require.main) 
-    require('test').run(exports);
-
+test.run(exports);
