@@ -65,15 +65,30 @@
         script = script.replace(/\.\//, '');
       }
 
-      function addEvent(obj, type, fn)  {
-        if (obj.attachEvent) {
-          obj['e' + type + fn] = fn;
-          obj[type + fn] = function(){obj['e' + type + fn](window.event);}
-          obj.attachEvent('on' + type, obj[type + fn]);
-        } else
-          obj.addEventListener(type, fn, false);
+      function loadIEScript() {
+        var id = '__id_' + (new Date()).valueOf(),
+            timer,
+            scriptTag;
+        document.write('<script id="' + id + '" type="text/javascript" src="' + script + '"></script>');
+        scriptTag = document.getElementById(id);
+
+        timer = setInterval(function() {
+          if (/loaded|complete/.test(scriptTag.readyState)) {
+            clearInterval(timer);
+            tt.doneLoading();
+          }
+        }, 10);
       }
-        
+
+      function loadOtherScript() {
+        var scriptTag = document.createElement('script'),
+            head = document.getElementsByTagName('head');
+        scriptTag.onload = function() { tt.doneLoading(); };
+        scriptTag.setAttribute('type', 'text/javascript');
+        scriptTag.setAttribute('src', script);
+        head[0].insertBefore(scriptTag, head.firstChild);
+      }
+
       switch (detectEnvironment()) {
         case 'xpcomcore':
         case 'rhino':
@@ -87,13 +102,12 @@
         break;
 
         case 'browser':
-          var scriptTag = document.createElement('script'),
-              head = document.getElementsByTagName('head');
           this.loading();
-          addEvent(scriptTag, 'load', tt.doneLoading);
-          scriptTag.setAttribute('type', 'text/javascript');
-          scriptTag.setAttribute('src', script);
-          head[0].insertBefore(scriptTag, head.firstChild);
+          if (document.attachEvent) {
+            loadIEScript();
+          } else {
+            loadOtherScript();
+          }
         break;
       }
     },
